@@ -19,7 +19,7 @@ async function sleepRandom(): Promise<void> {
 }
 
 async function sleep(millis: number): Promise<void> {
-  return new Promise(resolve => setTimeout(() => resolve(), millis));
+  return new Promise((resolve) => setTimeout(() => resolve(), millis));
 }
 
 export class GitlabClient {
