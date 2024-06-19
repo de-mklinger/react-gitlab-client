@@ -22,6 +22,19 @@ async function sleep(millis: number): Promise<void> {
   return new Promise((resolve) => setTimeout(() => resolve(), millis));
 }
 
+export class HttpResponseError extends Error {
+  public readonly status: number;
+
+  constructor(status: number, message?: string) {
+    super(message ?? "HTTP response error: " + status);
+    this.status = status;
+  }
+
+  public isNotFound(): boolean {
+    return this.status === 404;
+  }
+}
+
 export class GitlabClient {
   private readonly gitlabAuthService: GitLabAuthService;
   private readonly gitlabUrl: string;
@@ -73,13 +86,14 @@ export class GitlabClient {
         body = response.json();
       } catch (e) {
         if (!response.ok) {
-          throw new Error("Response HTTP error: " + response.status);
+          throw new HttpResponseError(response.status);
         }
         throw e;
       }
       if (!response.ok) {
-        throw new Error(
-          "Response HTTP error: " +
+        throw new HttpResponseError(
+          response.status,
+          "HTTP response error: " +
             response.status +
             ".\nBody:\n" +
             JSON.stringify(body, null, "  ")
