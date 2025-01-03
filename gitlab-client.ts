@@ -224,9 +224,9 @@ export class GitlabClient {
     return data as GitlabCommit;
   }
 
-  private static toBase64Utf8(str: string): string {
-    return btoa(unescape(encodeURIComponent(str)));
-  }
+  // private static toBase64Utf8(str: string): string {
+  //   return btoa(unescape(encodeURIComponent(str)));
+  // }
 
   private static fromBase64Utf8(str: string): string {
     return decodeURIComponent(escape(atob(str)));
