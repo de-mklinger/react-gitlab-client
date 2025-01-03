@@ -80,27 +80,29 @@ export class GitlabClient {
     bodyObject?: any,
     headers?: Record<string, string>
   ): Promise<unknown> {
-    return this.fetch(path, method, bodyObject, headers).then((response) => {
-      let body;
-      try {
-        body = response.json();
-      } catch (e) {
-        if (!response.ok) {
-          throw new HttpResponseError(response.status);
-        }
-        throw e;
-      }
+    const response = await this.fetch(path, method, bodyObject, headers);
+
+    let body;
+    try {
+      body = await response.json();
+    } catch (e) {
       if (!response.ok) {
-        throw new HttpResponseError(
-          response.status,
-          "HTTP response error: " +
-            response.status +
-            ".\nBody:\n" +
-            JSON.stringify(body, null, "  ")
-        );
+        throw new HttpResponseError(response.status);
       }
-      return body;
-    });
+      throw e;
+    }
+
+    if (!response.ok) {
+      throw new HttpResponseError(
+        response.status,
+        "HTTP response error: " +
+          response.status +
+          ".\nBody:\n" +
+          JSON.stringify(body, null, "  ")
+      );
+    }
+
+    return body;
   }
 
   public async fetchRepositoryFileXml(
