@@ -223,7 +223,7 @@ export class GitlabClient {
       throw new Error("Invalid gitlab response");
     }
 
-    return data as GitlabCommit;
+    return data;
   }
 
   // private static toBase64Utf8(str: string): string {
