@@ -47,7 +47,7 @@ export class GitlabClient {
   private async fetch(
     path: string,
     method: string = "GET",
-    bodyObject?: any,
+    bodyObject?: unknown,
     headers?: Record<string, string>
   ): Promise<Response> {
     const additionalHeaders: { [name: string]: string } = {
@@ -74,12 +74,12 @@ export class GitlabClient {
     });
   }
 
-  private async fetchJson(
+  private async fetchJson<T = unknown>(
     path: string,
     method: string = "GET",
-    bodyObject?: any,
+    bodyObject?: unknown,
     headers?: Record<string, string>
-  ): Promise<unknown> {
+  ): Promise<T> {
     const response = await this.fetch(path, method, bodyObject, headers);
 
     let body;
@@ -137,7 +137,7 @@ export class GitlabClient {
     projectIdOrPath: number | string,
     filePath: string,
     ref: string
-  ): Promise<any> {
+  ): Promise<{ encoding?: string; content: string }> {
     return this.fetchJson(this.getFilePath(projectIdOrPath, filePath, ref));
   }
 
