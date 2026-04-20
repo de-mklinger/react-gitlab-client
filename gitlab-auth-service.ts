@@ -1,6 +1,6 @@
-import { useAuth } from "react-oidc-context";
-import { LoginState, settings } from "../../settings";
+import type { SigninRedirectArgs } from "oidc-client-ts";
 import { useCallback } from "react";
+import { useAuth } from "react-oidc-context";
 
 export type GitLabAuthService = {
   isPending: () => boolean;
@@ -12,7 +12,11 @@ export type GitLabAuthService = {
   logout: () => Promise<void>;
 };
 
-export function useGitLabAuth(): { gitLabAuthService: GitLabAuthService } {
+export type UseGitLabAuthResult = {
+  gitLabAuthService: GitLabAuthService;
+};
+
+export function useGitLabAuth(): UseGitLabAuthResult {
   const auth = useAuth();
 
   const { isAuthenticated, signinRedirect, signoutRedirect, user } = auth;
@@ -27,23 +31,21 @@ export function useGitLabAuth(): { gitLabAuthService: GitLabAuthService } {
 
   const login = useCallback(() => {
     if (isAuthenticated) {
-      throw new Error();
+      throw new Error("Already authenticated");
     }
 
-    let state: LoginState | undefined;
-    if (window.location.hash && window.location.hash !== "#") {
-      state = {
-        hash: window.location.hash,
+    const args: SigninRedirectArgs = {};
+    if (globalThis.location.hash && globalThis.location.hash !== "#") {
+      args.state = {
+        hash: globalThis.location.hash,
       };
     }
-    return signinRedirect({
-      state,
-    });
+    return signinRedirect(args);
   }, [isAuthenticated, signinRedirect]);
 
   const logout = useCallback(async () => {
     if (!isAuthenticated) {
-      throw new Error();
+      throw new Error("Not authenticated");
     }
     await signoutRedirect();
   }, [isAuthenticated, signoutRedirect]);
@@ -53,8 +55,8 @@ export function useGitLabAuth(): { gitLabAuthService: GitLabAuthService } {
       getAuthorization,
       isPending: () => Boolean(auth.activeNavigator) || auth.isLoading,
       isLoggedIn: () => auth.isAuthenticated,
-      canLogIn: () => !settings.immediateLogin && !auth.isAuthenticated,
-      canLogOut: () => !settings.immediateLogin && auth.isAuthenticated,
+      canLogIn: () => !auth.isAuthenticated,
+      canLogOut: () => auth.isAuthenticated,
       login,
       logout,
     },
