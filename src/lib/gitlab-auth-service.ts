@@ -1,5 +1,5 @@
-import type { SigninRedirectArgs } from "oidc-client-ts";
-import { useCallback } from "react";
+import type { SigninRedirectArgs, UserProfile } from "oidc-client-ts";
+import { useCallback, useMemo } from "react";
 import { useAuth } from "react-oidc-context";
 
 export type GitLabAuthService = {
@@ -10,6 +10,7 @@ export type GitLabAuthService = {
   getAuthorization: () => string;
   login: () => Promise<void>;
   logout: () => Promise<void>;
+  getUserProfile: () => UserProfile | undefined;
 };
 
 export type UseGitLabAuthResult = {
@@ -19,7 +20,13 @@ export type UseGitLabAuthResult = {
 export function useGitLabAuth(): UseGitLabAuthResult {
   const auth = useAuth();
 
-  const { isAuthenticated, signinRedirect, signoutRedirect, user } = auth;
+  const { isAuthenticated, signinRedirect, signoutRedirect, user, error } =
+    auth;
+
+  if (error) {
+    throw error;
+  }
+
   const accessToken = user?.access_token;
 
   const getAuthorization = useCallback(() => {
@@ -50,15 +57,31 @@ export function useGitLabAuth(): UseGitLabAuthResult {
     await signoutRedirect();
   }, [isAuthenticated, signoutRedirect]);
 
-  return {
-    gitLabAuthService: {
+  const isPending = Boolean(auth.activeNavigator) || auth.isLoading;
+
+  const userProfile = user?.profile ?? undefined;
+  const getUserProfile = useCallback(() => userProfile, [userProfile]);
+
+  return useMemo(
+    () => ({
+      gitLabAuthService: {
+        getAuthorization,
+        isPending: () => isPending,
+        isLoggedIn: () => isAuthenticated,
+        canLogIn: () => !isAuthenticated,
+        canLogOut: () => isAuthenticated,
+        login,
+        logout,
+        getUserProfile,
+      },
+    }),
+    [
       getAuthorization,
-      isPending: () => Boolean(auth.activeNavigator) || auth.isLoading,
-      isLoggedIn: () => auth.isAuthenticated,
-      canLogIn: () => !auth.isAuthenticated,
-      canLogOut: () => auth.isAuthenticated,
+      isPending,
+      isAuthenticated,
       login,
       logout,
-    },
-  };
+      getUserProfile,
+    ],
+  );
 }
