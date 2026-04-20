@@ -1,10 +1,10 @@
-import { GitLabAuthService } from "./gitlab-auth-service";
+import { type GitLabAuthService } from "./gitlab-auth-service";
 import {
-  CommitAction,
-  GitlabCommit,
+  type CommitAction,
+  type GitlabCommit,
   isGitlabCommit,
   isRepositoryFile,
-  RepositoryFile,
+  type RepositoryFile,
 } from "./gitlab-types";
 
 const simulateSlowResponses = false;

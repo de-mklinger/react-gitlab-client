@@ -1,4 +1,4 @@
-import { isPlainOldObject } from "../common-type-guards";
+import { isPlainOldObject } from "./is-plain-old-object.ts";
 
 export type CommitAction = {
   action: "create" | "delete" | "move" | "update" | "chmod"; //	yes	The action to perform, create, delete, move, update, chmod
