@@ -1,14 +1,16 @@
-import type { PropsWithChildren } from "react";
+import { type PropsWithChildren, useEffect, useState } from "react";
 import { AuthProvider } from "react-oidc-context";
-import { useGitLabAuth } from "../lib";
+import { GitlabClient, useGitLabAuth } from "../lib";
+import type { ListRepositoryTreesResponse } from "../lib/gitlab-client.ts";
 import ErrorBoundary from "./ErrorBoundary.tsx";
-import { getAuthProviderProps } from "./settings.ts";
+import { getAuthProviderProps, getSettings } from "./settings.ts";
 
 export default function App() {
   return (
     <ErrorBoundary>
       <MyAuthProvider>
         <MyHeader />
+        <MyBody />
       </MyAuthProvider>
     </ErrorBoundary>
   );
@@ -42,4 +44,34 @@ function MyHeader() {
       {gitLabAuthService.isPending() && <span>Loading...</span>}
     </div>
   );
+}
+
+function MyBody() {
+  const { gitlabUrl, gitlabProjectPath } = getSettings();
+  const { gitLabAuthService } = useGitLabAuth();
+
+  const [respositoryTrees, setRespositoryTrees] =
+    useState<ListRepositoryTreesResponse>();
+  const [error, setError] = useState<unknown>();
+
+  useEffect(() => {
+    if (gitLabAuthService.isLoggedIn()) {
+      const gitLabClient = new GitlabClient(gitlabUrl, gitLabAuthService);
+      gitLabClient
+        .listRepositoryTrees(gitlabProjectPath)
+        .then(setRespositoryTrees)
+        .catch(setError);
+    }
+  }, [
+    gitlabUrl,
+    gitLabAuthService,
+    gitLabAuthService.isLoggedIn(),
+    gitlabProjectPath,
+  ]);
+
+  if (error) {
+    throw error;
+  }
+
+  return <pre>{JSON.stringify(respositoryTrees, null, 2)}</pre>;
 }

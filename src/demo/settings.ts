@@ -7,6 +7,7 @@ const envMapping = {
   gitlabUrl: "GITLAB_URL",
   gitlabOauthApplicationId: "GITLAB_OAUTH_APPLICATION_ID",
   gitlabOauthRedirectUrl: "GITLAB_OAUTH_REDIRECT_URL",
+  gitlabProjectPath: "GITLAB_PROJECT_PATH",
 } as const;
 
 type SettingsKeys = keyof typeof envMapping;

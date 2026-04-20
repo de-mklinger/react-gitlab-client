@@ -6,6 +6,7 @@ import {
   isRepositoryFile,
   type RepositoryFile,
 } from "./gitlab-types";
+import { isPlainOldObject } from "./is-plain-old-object.ts";
 
 const simulateSlowResponses = false;
 
@@ -35,6 +36,7 @@ type FetchInit = {
   method?: string;
   headers?: Record<string, string>;
   bodyObject?: unknown;
+  query?: string[][] | Record<string, string> | string | URLSearchParams;
 };
 
 type FetchJsonInit<T> = FetchInit & {
@@ -65,7 +67,12 @@ export class GitlabClient {
       await sleepRandom();
     }
 
-    return fetch(`${this.gitlabUrl}${path}`, {
+    const url = new URL(`${this.gitlabUrl}${path}`);
+    if (init?.query) {
+      url.search = new URLSearchParams(init.query).toString();
+    }
+
+    return fetch(url, {
       method: init?.method ?? "GET",
       headers: new Headers({
         ...additionalHeaders,
@@ -81,7 +88,7 @@ export class GitlabClient {
   ): Promise<T> {
     const response = await this.fetch(path, init);
 
-    let body;
+    let body: unknown;
     try {
       body = await response.json();
     } catch (e) {
@@ -105,7 +112,7 @@ export class GitlabClient {
       throw new Error("Response body does not match expected type");
     }
 
-    return body;
+    return body as T;
   }
 
   public async fetchRepositoryFileXml(
@@ -221,4 +228,72 @@ export class GitlabClient {
   private static fromBase64Utf8(str: string): string {
     return decodeURIComponent(escape(atob(str)));
   }
+
+  public listRepositoryTrees(
+    projectIdOrPath: string,
+    args?: ListRepositoryTreesArgs,
+  ): Promise<ListRepositoryTreesResponse> {
+    return this.fetchJson(
+      `/api/v4/projects/${encodeURIComponent(projectIdOrPath)}/repository/tree`,
+      {
+        method: "GET",
+        query: GitlabClient.toQuery(args),
+      },
+    );
+  }
+
+  private static toQuery(
+    obj?: Record<string, unknown>,
+  ): string[][] | undefined {
+    if (!obj) {
+      return undefined;
+    }
+
+    return Object.entries(obj).map(([k, v]) => [k, String(v)]);
+  }
+}
+
+export type ListRepositoryTreesArgs = {
+  /** Tree record ID at which to fetch the next page. Used only with keyset pagination. */
+  page_token?: string;
+  /** If keyset, use the keyset-based pagination method. */
+  pagination?: string;
+  /** Path inside the repository. Used to get content of subdirectories. */
+  path?: string;
+  /** Number of results to show per page. If not specified, defaults to 20. For more information, see pagination. */
+  per_page?: number;
+  /** If true, get a recursive tree. Default is false. */
+  recursive?: boolean;
+  /** Name of a repository branch or tag. If not specified, uses the default branch. */
+  ref?: string;
+};
+
+export type ListRepositoryTreesResponse =
+  Array<ListRepositoryTreesResponseItem>;
+
+export function isListRepositoryTreesResponse(
+  x: unknown,
+): x is ListRepositoryTreesResponse {
+  return Array.isArray(x) && x.every(isListRepositoryTreesResponseItem);
+}
+
+export type ListRepositoryTreesResponseItem = {
+  id: string;
+  name: string;
+  type: "tree" | "blob" | string;
+  path: string;
+  mode: string;
+};
+
+export function isListRepositoryTreesResponseItem(
+  x: unknown,
+): x is ListRepositoryTreesResponseItem {
+  return (
+    isPlainOldObject(x) &&
+    typeof x.id === "string" &&
+    typeof x.name === "string" &&
+    typeof x.type === "string" &&
+    typeof x.path === "string" &&
+    typeof x.mode === "string"
+  );
 }
