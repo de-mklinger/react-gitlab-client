@@ -1,15 +1,11 @@
 import { GitLabAuthService } from "./gitlab-auth-service";
-import { GitlabCommit, isGitlabCommit } from "./gitlab-types";
-
-export interface CommitAction {
-  action: "create" | "delete" | "move" | "update" | "chmod"; //	yes	The action to perform, create, delete, move, update, chmod
-  file_path: string; //	yes	Full path to the file. Ex. lib/class.rb
-  previous_path?: string; //	no	Original full path to the file being moved. Ex. lib/class1.rb. Only considered for move action.
-  content?: string; //	no	File content, required for all except delete, chmod, and move. Move actions that do not specify content preserve the existing file content, and any other value of content overwrites the file content.
-  encoding?: "text" | "base64"; //	no	text or base64. text is default.
-  last_commit_id?: string; //	no	Last known file commit ID. Only considered in update, move, and delete actions.
-  execute_filemode?: boolean; //	no	When true/false enables/disables the execute flag on the file. Only considered for chmod action.
-}
+import {
+  CommitAction,
+  GitlabCommit,
+  isGitlabCommit,
+  isRepositoryFile,
+  RepositoryFile,
+} from "./gitlab-types";
 
 const simulateSlowResponses = false;
 
@@ -35,6 +31,16 @@ export class HttpResponseError extends Error {
   }
 }
 
+type FetchInit = {
+  method?: string;
+  headers?: Record<string, string>;
+  bodyObject?: unknown;
+};
+
+type FetchJsonInit<T> = FetchInit & {
+  typeGuard?: (x: unknown) => x is T;
+};
+
 export class GitlabClient {
   private readonly gitlabAuthService: GitLabAuthService;
   private readonly gitlabUrl: string;
@@ -44,19 +50,14 @@ export class GitlabClient {
     this.gitlabAuthService = gitlabAuthService;
   }
 
-  private async fetch(
-    path: string,
-    method: string = "GET",
-    bodyObject?: unknown,
-    headers?: Record<string, string>
-  ): Promise<Response> {
+  private async fetch(path: string, init?: FetchInit): Promise<Response> {
     const additionalHeaders: { [name: string]: string } = {
       Authorization: this.gitlabAuthService.getAuthorization(),
     };
 
     let body = undefined;
-    if (bodyObject !== null && bodyObject !== undefined) {
-      body = JSON.stringify(bodyObject);
+    if (init?.bodyObject) {
+      body = JSON.stringify(init.bodyObject);
       additionalHeaders["Content-Type"] = "application/json";
     }
 
@@ -65,10 +66,10 @@ export class GitlabClient {
     }
 
     return fetch(`${this.gitlabUrl}${path}`, {
-      method,
+      method: init?.method ?? "GET",
       headers: new Headers({
         ...additionalHeaders,
-        ...headers,
+        ...init?.headers,
       }),
       body,
     });
@@ -76,11 +77,9 @@ export class GitlabClient {
 
   private async fetchJson<T = unknown>(
     path: string,
-    method: string = "GET",
-    bodyObject?: unknown,
-    headers?: Record<string, string>
+    init?: FetchJsonInit<T>,
   ): Promise<T> {
-    const response = await this.fetch(path, method, bodyObject, headers);
+    const response = await this.fetch(path, init);
 
     let body;
     try {
@@ -98,8 +97,12 @@ export class GitlabClient {
         "HTTP response error: " +
           response.status +
           ".\nBody:\n" +
-          JSON.stringify(body, null, "  ")
+          JSON.stringify(body, null, "  "),
       );
+    }
+
+    if (init?.typeGuard && !init.typeGuard(body)) {
+      throw new Error("Response body does not match expected type");
     }
 
     return body;
@@ -108,19 +111,19 @@ export class GitlabClient {
   public async fetchRepositoryFileXml(
     projectIdOrPath: number | string,
     filePath: string,
-    ref = "master"
+    ref = "master",
   ): Promise<Document> {
     return this.fetchRepositoryFileContentUtf8(
       projectIdOrPath,
       filePath,
-      ref
+      ref,
     ).then((xml) => new DOMParser().parseFromString(xml, "text/xml"));
   }
 
   public async fetchRepositoryFileContentUtf8(
     projectIdOrPath: number | string,
     filePath: string,
-    ref = "master"
+    ref = "master",
   ): Promise<string> {
     return this.fetchRepositoryFile(projectIdOrPath, filePath, ref).then(
       (file) => {
@@ -129,26 +132,28 @@ export class GitlabClient {
         } else {
           throw new Error("Encoding not implemented: " + file.encoding);
         }
-      }
+      },
     );
   }
 
   private async fetchRepositoryFile(
     projectIdOrPath: number | string,
     filePath: string,
-    ref: string
-  ): Promise<{ encoding?: string; content: string }> {
-    return this.fetchJson(this.getFilePath(projectIdOrPath, filePath, ref));
+    ref: string,
+  ): Promise<RepositoryFile> {
+    return this.fetchJson(this.getFilePath(projectIdOrPath, filePath, ref), {
+      typeGuard: isRepositoryFile,
+    });
   }
 
   private getFilePath(
     projectIdOrPath: number | string,
     filePath: string,
     ref: string,
-    raw = false
+    raw = false,
   ): string {
     return `/api/v4/projects/${encodeURIComponent(
-      projectIdOrPath
+      projectIdOrPath,
     )}/repository/files/${encodeURIComponent(filePath)}${
       raw ? "/raw" : ""
     }?ref=${ref}`;
@@ -157,24 +162,24 @@ export class GitlabClient {
   public getRawFileUrl(
     projectIdOrPath: number | string,
     filePath: string,
-    ref: string
+    ref: string,
   ): string {
     return `${this.gitlabUrl}${this.getFilePath(
       projectIdOrPath,
       filePath,
       ref,
-      true
+      true,
     )}`;
   }
 
   public async repositoryFileExists(
     projectIdOrPath: number | string,
     filePath: string,
-    ref: string
+    ref: string,
   ): Promise<boolean> {
     const response = await this.fetch(
       this.getFilePath(projectIdOrPath, filePath, ref),
-      "HEAD"
+      { method: "HEAD" },
     );
     if (response.ok) {
       return true;
@@ -182,48 +187,31 @@ export class GitlabClient {
       return false;
     } else {
       throw new Error(
-        `Unexpected response status ${response.status} for ${response.url}`
+        `Unexpected response status ${response.status} for ${response.url}`,
       );
     }
   }
-
-  // update file
-  // public async putRepositoryFile(projectIdOrPath: number | string, filePath: string, branch: string, content: string): Promise<any> {
-  //     const bodyObject = {
-  //         branch,
-  //         content,
-  //         commit_message: "Update file"
-  //     }
-  //     return this.fetchJson(
-  //         `/api/v4/projects/${encodeURIComponent(projectIdOrPath)}/repository/files/${encodeURIComponent(filePath)}`,
-  //         "PUT",
-  //         bodyObject
-  //     );
-  // }
 
   public async createCommit(
     projectIdOrPath: number | string,
     branch: string,
     actions: CommitAction[],
-    commitMessage = "Update"
+    commitMessage = "Update",
   ): Promise<GitlabCommit> {
-    const data = await this.fetchJson(
+    return await this.fetchJson(
       `/api/v4/projects/${encodeURIComponent(
-        projectIdOrPath
+        projectIdOrPath,
       )}/repository/commits`,
-      "POST",
       {
-        branch,
-        commit_message: commitMessage,
-        actions,
-      }
+        method: "POST",
+        bodyObject: {
+          branch,
+          commit_message: commitMessage,
+          actions,
+        },
+        typeGuard: isGitlabCommit,
+      },
     );
-
-    if (!isGitlabCommit(data)) {
-      throw new Error("Invalid gitlab response");
-    }
-
-    return data;
   }
 
   // private static toBase64Utf8(str: string): string {
