@@ -1,7 +1,7 @@
 import type { ErrorInfo, PropsWithChildren } from "react";
 import * as React from "react";
 
-export type ErrorBoundaryProps = PropsWithChildren<{}>;
+export type ErrorBoundaryProps = PropsWithChildren;
 
 type ErrorBoundaryState = {
   hasError: boolean;

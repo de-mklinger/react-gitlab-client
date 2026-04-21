@@ -54,20 +54,17 @@ function MyBody() {
     useState<ListRepositoryTreesResponse>();
   const [error, setError] = useState<unknown>();
 
+  const isLoggedIn = gitLabAuthService.isLoggedIn();
+
   useEffect(() => {
-    if (gitLabAuthService.isLoggedIn()) {
+    if (isLoggedIn) {
       const gitLabClient = new GitlabClient(gitlabUrl, gitLabAuthService);
       gitLabClient
         .listRepositoryTrees(gitlabProjectPath)
         .then(setRespositoryTrees)
         .catch(setError);
     }
-  }, [
-    gitlabUrl,
-    gitLabAuthService,
-    gitLabAuthService.isLoggedIn(),
-    gitlabProjectPath,
-  ]);
+  }, [gitlabUrl, gitLabAuthService, isLoggedIn, gitlabProjectPath]);
 
   if (error) {
     throw error;
