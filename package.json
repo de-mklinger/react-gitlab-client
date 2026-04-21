@@ -29,7 +29,8 @@
     "lint": "eslint .",
     "test": "vitest",
     "preview": "vite preview",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "assert-version": "node -e 'const die=(s)=>{console.error(`Error: ${s}`); process.exit(1)}; let ev=process.env.VERSION; if (!ev) { die(\"Missing env variable VERSION\"); } if (ev.startsWith(\"v\")) { ev = ev.substring(1); } const av=require(\"./package.json\").version; if (ev != av) { die(`Expected version ${ev}, but found version ${av} in package.json`) }; console.log(`OK: ${ev}`);'"
   },
   "peerDependencies": {
     "oidc-client-ts": ">=2.4",
