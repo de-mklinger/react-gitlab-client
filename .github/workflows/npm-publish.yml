@@ -17,11 +17,11 @@ jobs:
         with:
           node-version: 20
       - run: echo "Running for tag ${{ github.ref_name }}"
-      - run: VERSION=${{ github.ref_name }} npm assert-version
+      - run: VERSION=${{ github.ref_name }} npm run assert-version
       - run: npm ci
-      - run: npm lint
       - run: npm test
-      - run: npm build
+      - run: npm run lint
+      - run: npm run build
 
 #  publish-npm:
 #    needs: build
