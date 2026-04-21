@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
       - run: echo "Running for tag ${{ github.ref_name }}"
       - run: VERSION=${{ github.ref_name }} npm run assert-version
       - run: npm ci
@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           registry-url: https://registry.npmjs.org/
       - run: npm ci
       - run: npm publish --access public
