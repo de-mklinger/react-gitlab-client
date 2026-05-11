@@ -1,7 +1,10 @@
 import { type PropsWithChildren, useEffect, useState } from "react";
 import { AuthProvider } from "react-oidc-context";
-import { GitlabClient, useGitLabAuth } from "../lib";
-import type { ListRepositoryTreesResponse } from "../lib/gitlab-client.ts";
+import {
+  GitlabClient,
+  type ListRepositoryTreesResponse,
+  useGitLabAuth,
+} from "../lib";
 import ErrorBoundary from "./ErrorBoundary.tsx";
 import { getAuthProviderProps, getSettings } from "./settings.ts";
 

@@ -68,3 +68,48 @@ export function isRepositoryFile(x: unknown): x is RepositoryFile {
     typeof x.content === "string"
   );
 }
+
+export type ListRepositoryTreesArgs = {
+  /** Tree record ID at which to fetch the next page. Used only with keyset pagination. */
+  page_token?: string;
+  /** If keyset, use the keyset-based pagination method. */
+  pagination?: string;
+  /** Path inside the repository. Used to get content of subdirectories. */
+  path?: string;
+  /** Number of results to show per page. If not specified, defaults to 20. For more information, see pagination. */
+  per_page?: number;
+  /** If true, get a recursive tree. Default is false. */
+  recursive?: boolean;
+  /** Name of a repository branch or tag. If not specified, uses the default branch. */
+  ref?: string;
+};
+
+export type ListRepositoryTreesResponse =
+  Array<ListRepositoryTreesResponseItem>;
+
+export function isListRepositoryTreesResponse(
+  x: unknown,
+): x is ListRepositoryTreesResponse {
+  return Array.isArray(x) && x.every(isListRepositoryTreesResponseItem);
+}
+
+export type ListRepositoryTreesResponseItem = {
+  id: string;
+  name: string;
+  type: "tree" | "blob" | string;
+  path: string;
+  mode: string;
+};
+
+export function isListRepositoryTreesResponseItem(
+  x: unknown,
+): x is ListRepositoryTreesResponseItem {
+  return (
+    isPlainOldObject(x) &&
+    typeof x.id === "string" &&
+    typeof x.name === "string" &&
+    typeof x.type === "string" &&
+    typeof x.path === "string" &&
+    typeof x.mode === "string"
+  );
+}
