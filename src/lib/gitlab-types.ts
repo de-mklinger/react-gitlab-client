@@ -19,6 +19,37 @@ export function isGitlabCommit(x: unknown): x is GitlabCommit {
   return isPlainOldObject(x) && typeof x.id === "string";
 }
 
+export type ListRepositoryCommitsArgs = {
+  /** The name of a repository branch, tag or revision range, or if not given the default branch. */
+  ref_name?: string;
+  /** Only commits after or on this date are returned in ISO 8601 format YYYY-MM-DDTHH:MM:SSZ. */
+  since?: string;
+  /** Only commits before or on this date are returned in ISO 8601 format YYYY-MM-DDTHH:MM:SSZ. */
+  until?: string;
+  /** The file path. */
+  path?: string;
+  /** Retrieve every commit from the repository. */
+  all?: boolean;
+  /** If true, retrieve stats about each commit. */
+  with_stats?: boolean;
+  /** If true, parses and includes Git trailers for every commit. */
+  trailers?: boolean;
+  /** List commits in order. Possible values: default, topo. Defaults to default, the commits are shown in reverse chronological order. */
+  order?: "default" | "topo";
+  /** Number of results to show per page. If not specified, defaults to 20. */
+  per_page?: number;
+  /** Page number. */
+  page?: number;
+};
+
+export type ListRepositoryCommitsResponse = Array<GitlabCommit>;
+
+export function isListRepositoryCommitsResponse(
+  x: unknown,
+): x is ListRepositoryCommitsResponse {
+  return Array.isArray(x) && x.every(isGitlabCommit);
+}
+
 // Taken from example at https://docs.gitlab.com/ee/api/commits.html
 type GitlabExampleCommit = {
   id: string;

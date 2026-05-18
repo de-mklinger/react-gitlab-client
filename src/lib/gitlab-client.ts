@@ -3,8 +3,11 @@ import {
   type CommitAction,
   type GitlabCommit,
   isGitlabCommit,
+  isListRepositoryCommitsResponse,
   isListRepositoryTreesResponse,
   isRepositoryFile,
+  type ListRepositoryCommitsArgs,
+  type ListRepositoryCommitsResponse,
   type ListRepositoryTreesArgs,
   type ListRepositoryTreesResponse,
   type RepositoryFile,
@@ -229,6 +232,22 @@ export class GitlabClient {
         method: "GET",
         query: GitlabClient.toQuery(args),
         typeGuard: isListRepositoryTreesResponse,
+      },
+    );
+  }
+
+  public listRepositoryCommits(
+    projectIdOrPath: number | string,
+    args?: ListRepositoryCommitsArgs,
+  ): Promise<ListRepositoryCommitsResponse> {
+    return this.fetchJson(
+      `/api/v4/projects/${encodeURIComponent(
+        projectIdOrPath,
+      )}/repository/commits`,
+      {
+        method: "GET",
+        query: GitlabClient.toQuery(args),
+        typeGuard: isListRepositoryCommitsResponse,
       },
     );
   }
