@@ -1,4 +1,3 @@
-import { type GitLabAuthService } from "./gitlab-auth-service";
 import {
   type CommitAction,
   type GitlabCommit,
@@ -17,7 +16,7 @@ import { HttpResponseError } from "./http-response-error";
 const simulateSlowResponses = false;
 
 async function sleepRandom(): Promise<void> {
-  const millis = 5000 * Math.random();
+  const millis = Math.round(5000 * Math.random() + 1000);
   return sleep(millis);
 }
 
@@ -36,19 +35,27 @@ type FetchJsonInit<T> = FetchInit & {
   typeGuard?: (x: unknown) => x is T;
 };
 
+export type GitlabClientOpts = {
+  gitlabUrl: string;
+  accessToken?: string;
+  simulateSlowResponses?: boolean;
+};
+
 export class GitlabClient {
-  private readonly gitlabAuthService: GitLabAuthService;
+  private readonly accessToken: string | undefined;
   private readonly gitlabUrl: string;
 
-  constructor(gitlabUrl: string, gitlabAuthService: GitLabAuthService) {
-    this.gitlabUrl = gitlabUrl;
-    this.gitlabAuthService = gitlabAuthService;
+  constructor(opts: GitlabClientOpts) {
+    this.gitlabUrl = opts.gitlabUrl;
+    this.accessToken = opts.accessToken;
   }
 
   private async fetch(path: string, init?: FetchInit): Promise<Response> {
-    const additionalHeaders: { [name: string]: string } = {
-      Authorization: this.gitlabAuthService.getAuthorization(),
-    };
+    const additionalHeaders: Record<string, string> = {};
+
+    if (this.accessToken) {
+      additionalHeaders["Authorization"] = `Bearer ${this.accessToken}`;
+    }
 
     let body = undefined;
     if (init?.bodyObject) {
