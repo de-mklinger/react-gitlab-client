@@ -61,7 +61,10 @@ function MyBody() {
 
   useEffect(() => {
     if (isLoggedIn) {
-      const gitLabClient = new GitlabClient(gitlabUrl, gitLabAuthService);
+      const gitLabClient = new GitlabClient({
+        gitlabUrl,
+        accessToken: gitLabAuthService.getAccessToken(),
+      });
       gitLabClient
         .listRepositoryTrees(gitlabProjectPath)
         .then(setRespositoryTrees)

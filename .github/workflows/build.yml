@@ -11,6 +11,6 @@ jobs:
         with:
           node-version: 24
       - run: npm ci
-      - run: npm test
+      - run: npm test -- --coverage
       - run: npm run lint
       - run: npm run build

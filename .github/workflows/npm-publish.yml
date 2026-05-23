@@ -19,7 +19,7 @@ jobs:
       - run: echo "Running for tag ${{ github.ref_name }}"
       - run: VERSION=${{ github.ref_name }} npm run assert-version
       - run: npm ci
-      - run: npm test
+      - run: npm test -- --coverage
       - run: npm run lint
       - run: npm run build
 

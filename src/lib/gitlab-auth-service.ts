@@ -7,6 +7,7 @@ export type GitLabAuthService = {
   isLoggedIn: () => boolean;
   canLogIn: () => boolean;
   canLogOut: () => boolean;
+  getAccessToken: () => string | undefined;
   getAuthorization: () => string;
   login: () => Promise<void>;
   logout: () => Promise<void>;
@@ -35,6 +36,8 @@ export function useGitLabAuth(): UseGitLabAuthResult {
     }
     return `Bearer ${accessToken}`;
   }, [accessToken]);
+
+  const getAccessToken = useCallback(() => accessToken, [accessToken]);
 
   const login = useCallback(() => {
     if (isAuthenticated) {
@@ -66,6 +69,7 @@ export function useGitLabAuth(): UseGitLabAuthResult {
     () => ({
       gitLabAuthService: {
         getAuthorization,
+        getAccessToken,
         isPending: () => isPending,
         isLoggedIn: () => isAuthenticated,
         canLogIn: () => !isAuthenticated,
@@ -77,6 +81,7 @@ export function useGitLabAuth(): UseGitLabAuthResult {
     }),
     [
       getAuthorization,
+      getAccessToken,
       isPending,
       isAuthenticated,
       login,
