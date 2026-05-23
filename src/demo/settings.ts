@@ -1,5 +1,5 @@
 import type { AuthProviderProps } from "react-oidc-context";
-import { hashSigninCallback } from "../lib/hash-signin-callback.ts";
+import { hashSigninCallback } from "../lib";
 
 const envPrefix = "VITE_";
 
@@ -53,7 +53,7 @@ export function getAuthProviderProps(): AuthProviderProps {
     authority: settings.gitlabUrl,
     client_id: settings.gitlabOauthApplicationId,
     redirect_uri: settings.gitlabOauthRedirectUrl,
-    scope: ["openid", "profile", "api"].join(" "),
+    scope: ["openid", "api"].join(" "),
     automaticSilentRenew: true,
     onSigninCallback: hashSigninCallback,
   };
