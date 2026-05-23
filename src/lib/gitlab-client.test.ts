@@ -168,7 +168,7 @@ describe("GitlabClient", () => {
       expect(
         getFilePath("group/project", "path/to/file.ts", "v1.0", true),
       ).toBe(
-        "/api/v4/projects/group%2Fproject/repository/files/path%2Fto%2Ffile.ts/raw?ref=v1.0",
+        "/api/v4/projects/group%2Fproject/repository/files/path%2Fto%2Ffile.ts?ref=v1.0",
       );
     });
   });
@@ -177,6 +177,71 @@ describe("GitlabClient", () => {
     it("should return the full raw file URL", () => {
       expect(gitlabClient.getRawFileUrl(123, "README.md", "master")).toBe(
         "https://gitlab.example.com/api/v4/projects/123/repository/files/README.md/raw?ref=master",
+      );
+    });
+  });
+
+  describe("getUiFileUrl", () => {
+    it("should return the correct URL for numeric project ID and simple file path", () => {
+      const url = gitlabClient.getUiFileUrl(123, "README.md", "main");
+      expect(url).toBe("https://gitlab.example.com/123/-/raw/main/README.md");
+    });
+
+    it("should return the correct URL for project path and file path with slashes", () => {
+      const url = gitlabClient.getUiFileUrl(
+        "group/subgroup/project",
+        "src/lib/index.ts",
+        "develop",
+      );
+      expect(url).toBe(
+        "https://gitlab.example.com/group/subgroup/project/-/raw/develop/src/lib/index.ts",
+      );
+    });
+
+    it("should return the correct URL with refType heads", () => {
+      const url = gitlabClient.getUiFileUrl(
+        "group/subgroup/project",
+        "src/lib/index.ts",
+        "develop",
+        { refType: "heads" },
+      );
+      expect(url).toBe(
+        "https://gitlab.example.com/group/subgroup/project/-/raw/develop/src/lib/index.ts?ref_type=heads",
+      );
+    });
+
+    it("should return the correct URL with noInline", () => {
+      const url = gitlabClient.getUiFileUrl(
+        "group/subgroup/project",
+        "src/lib/index.ts",
+        "develop",
+        { noInline: true },
+      );
+      expect(url).toBe(
+        "https://gitlab.example.com/group/subgroup/project/-/raw/develop/src/lib/index.ts?inline=false",
+      );
+    });
+
+    it("should return the correct URL for project path and file path with slashes", () => {
+      const url = gitlabClient.getUiFileUrl(
+        "group/subgroup/project",
+        "src/lib/index.ts",
+        "develop",
+        { refType: "tags" },
+      );
+      expect(url).toBe(
+        "https://gitlab.example.com/group/subgroup/project/-/raw/develop/src/lib/index.ts?ref_type=tags",
+      );
+    });
+
+    it("should encode special characters in ref", () => {
+      const url = gitlabClient.getUiFileUrl(
+        "my-project",
+        "file.txt",
+        "feature/branch#1",
+      );
+      expect(url).toBe(
+        "https://gitlab.example.com/my-project/-/raw/feature%2Fbranch%231/file.txt",
       );
     });
   });

@@ -157,26 +157,69 @@ export class GitlabClient {
     projectIdOrPath: number | string,
     filePath: string,
     ref: string,
-    raw = false,
+    opts?: { raw?: boolean; addAccessToken?: boolean },
   ): string {
+    const query = new URLSearchParams();
+
+    query.set("ref", ref);
+
+    if (opts?.addAccessToken && this.accessToken) {
+      query.set("access_token", this.accessToken);
+    }
+
     return `/api/v4/projects/${encodeURIComponent(
       projectIdOrPath,
     )}/repository/files/${encodeURIComponent(filePath)}${
-      raw ? "/raw" : ""
-    }?ref=${ref}`;
+      opts?.raw ? "/raw" : ""
+    }?${query.toString()}`;
   }
 
   public getRawFileUrl(
     projectIdOrPath: number | string,
     filePath: string,
     ref: string,
+    opts?: { addAccessToken?: boolean },
   ): string {
     return `${this.gitlabUrl}${this.getFilePath(
       projectIdOrPath,
       filePath,
       ref,
-      true,
+      {
+        ...opts,
+        raw: true,
+      },
     )}`;
+  }
+
+  public getUiFileUrl(
+    projectIdOrPath: number | string,
+    filePath: string,
+    ref: string,
+    opts?: {
+      refType?: "heads" | "tags";
+      noInline?: boolean;
+    },
+  ) {
+    function encodeURIKeepSlashes(s: string): string {
+      return encodeURIComponent(s).replace(/%2F/gi, "/");
+    }
+
+    const query = new URLSearchParams();
+
+    if (opts?.refType) {
+      query.set("ref_type", opts.refType);
+    }
+
+    if (opts?.noInline) {
+      query.set("inline", "false");
+    }
+
+    let querySuffix = "";
+    if (query.size > 0) {
+      querySuffix = `?${query.toString()}`;
+    }
+
+    return `${this.gitlabUrl}/${encodeURIKeepSlashes(projectIdOrPath.toString())}/-/raw/${encodeURIComponent(ref)}/${encodeURIKeepSlashes(filePath)}${querySuffix}`;
   }
 
   public async repositoryFileExists(
