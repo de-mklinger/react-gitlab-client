@@ -1,19 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GitlabClient } from "./gitlab-client";
-import { type GitLabAuthService } from "./gitlab-auth-service";
 import type { CommitAction } from "./gitlab-types.ts";
 import { isPlainOldObject } from "./is-plain-old-object.ts";
 
 describe("GitlabClient", () => {
-  const mockGitlabAuthService = {
-    getAuthorization: vi.fn(),
-  };
   const mockFetch = vi.fn();
 
-  const gitlabClient = new GitlabClient(
-    "https://gitlab.example.com",
-    mockGitlabAuthService as unknown as GitLabAuthService,
-  );
+  const gitlabClient = new GitlabClient({
+    gitlabUrl: "https://gitlab.example.com",
+    accessToken: "token",
+  });
 
   const gitlabClient_fetch = gitlabClient["fetch"].bind(gitlabClient);
   const gitlabClient_fetchJson = gitlabClient["fetchJson"].bind(gitlabClient);
@@ -29,7 +25,6 @@ describe("GitlabClient", () => {
 
   describe("fetch", () => {
     it("should make a GET request with the correct URL and headers", async () => {
-      mockGitlabAuthService.getAuthorization.mockReturnValue("Bearer token");
       mockFetch.mockResolvedValueOnce(
         new Response(JSON.stringify({ success: true }), { status: 200 }),
       );
@@ -49,7 +44,6 @@ describe("GitlabClient", () => {
     });
 
     it("should append query parameters to the URL", async () => {
-      mockGitlabAuthService.getAuthorization.mockReturnValue("Bearer token");
       mockFetch.mockResolvedValueOnce(
         new Response(JSON.stringify({ success: true }), { status: 200 }),
       );
@@ -71,7 +65,6 @@ describe("GitlabClient", () => {
     });
 
     it("should send a POST request with JSON body", async () => {
-      mockGitlabAuthService.getAuthorization.mockReturnValue("Bearer token");
       mockFetch.mockResolvedValueOnce(
         new Response(JSON.stringify({ success: true }), { status: 201 }),
       );
@@ -97,7 +90,6 @@ describe("GitlabClient", () => {
     });
 
     it("should throw an error when fetch fails", async () => {
-      mockGitlabAuthService.getAuthorization.mockReturnValue("Bearer token");
       mockFetch.mockRejectedValueOnce(new Error("Fetch error"));
 
       await expect(gitlabClient_fetch("/api/v4/projects")).rejects.toThrow(
@@ -108,7 +100,6 @@ describe("GitlabClient", () => {
 
   describe("fetchJson", () => {
     it("should return parsed JSON when response is ok", async () => {
-      mockGitlabAuthService.getAuthorization.mockReturnValue("Bearer token");
       const data = { id: 1, name: "Test Project" };
       mockFetch.mockResolvedValueOnce(
         new Response(JSON.stringify(data), { status: 200 }),
@@ -120,18 +111,16 @@ describe("GitlabClient", () => {
     });
 
     it("should throw HttpResponseError when response is not ok", async () => {
-      mockGitlabAuthService.getAuthorization.mockReturnValue("Bearer token");
       mockFetch.mockResolvedValueOnce(
         new Response(JSON.stringify({ error: "Not Found" }), { status: 404 }),
       );
 
-      await expect(gitlabClient_fetchJson("/api/v4/projects/1")).rejects.toThrow(
-        "HTTP response error: 404",
-      );
+      await expect(
+        gitlabClient_fetchJson("/api/v4/projects/1"),
+      ).rejects.toThrow("HTTP response error: 404");
     });
 
     it("should throw HttpResponseError when response is not ok and no JSON response", async () => {
-      mockGitlabAuthService.getAuthorization.mockReturnValue("Bearer token");
       mockFetch.mockResolvedValueOnce(
         new Response("some non-json body", { status: 500 }),
       );
@@ -142,7 +131,6 @@ describe("GitlabClient", () => {
     });
 
     it("should throw HttpResponseError when response is not valid JSON response", async () => {
-      mockGitlabAuthService.getAuthorization.mockReturnValue("Bearer token");
       mockFetch.mockResolvedValueOnce(
         new Response("some non-json body", { status: 200 }),
       );
@@ -153,13 +141,13 @@ describe("GitlabClient", () => {
     });
 
     it("should throw error if typeGuard fails", async () => {
-      mockGitlabAuthService.getAuthorization.mockReturnValue("Bearer token");
       const data = { id: 1, name: "Test Project" };
       mockFetch.mockResolvedValueOnce(
         new Response(JSON.stringify(data), { status: 200 }),
       );
 
-      const typeGuard = (x: unknown): x is { different: string } => isPlainOldObject(x) && "different" in x;
+      const typeGuard = (x: unknown): x is { different: string } =>
+        isPlainOldObject(x) && "different" in x;
 
       await expect(
         gitlabClient_fetchJson("/api/v4/projects/1", { typeGuard }),
@@ -177,7 +165,9 @@ describe("GitlabClient", () => {
     });
 
     it("should return the correct raw file path", () => {
-      expect(getFilePath("group/project", "path/to/file.ts", "v1.0", true)).toBe(
+      expect(
+        getFilePath("group/project", "path/to/file.ts", "v1.0", true),
+      ).toBe(
         "/api/v4/projects/group%2Fproject/repository/files/path%2Fto%2Ffile.ts/raw?ref=v1.0",
       );
     });
@@ -194,7 +184,11 @@ describe("GitlabClient", () => {
   describe("repositoryFileExists", () => {
     it("should return true when response is ok", async () => {
       mockFetch.mockResolvedValueOnce(new Response(null, { status: 200 }));
-      const exists = await gitlabClient.repositoryFileExists(123, "file.ts", "main");
+      const exists = await gitlabClient.repositoryFileExists(
+        123,
+        "file.ts",
+        "main",
+      );
       expect(exists).toBe(true);
       expect(mockFetch).toHaveBeenCalledWith(
         expect.any(URL),
@@ -204,7 +198,11 @@ describe("GitlabClient", () => {
 
     it("should return false when response status is 404", async () => {
       mockFetch.mockResolvedValueOnce(new Response(null, { status: 404 }));
-      const exists = await gitlabClient.repositoryFileExists(123, "file.ts", "main");
+      const exists = await gitlabClient.repositoryFileExists(
+        123,
+        "file.ts",
+        "main",
+      );
       expect(exists).toBe(false);
     });
 
@@ -235,7 +233,11 @@ describe("GitlabClient", () => {
         new Response(JSON.stringify(fileData), { status: 200 }),
       );
 
-      const result = await gitlabClient["fetchRepositoryFile"](123, "test.txt", "main");
+      const result = await gitlabClient["fetchRepositoryFile"](
+        123,
+        "test.txt",
+        "main",
+      );
       expect(result).toEqual(fileData);
     });
 
@@ -319,7 +321,11 @@ describe("GitlabClient", () => {
         },
       );
 
-      const result = await gitlabClient.fetchRepositoryFileXml(123, "test.xml", "main");
+      const result = await gitlabClient.fetchRepositoryFileXml(
+        123,
+        "test.xml",
+        "main",
+      );
       expect(result).toBe(mockDocument);
       expect(parseFromString).toHaveBeenCalledWith(xmlContent, "text/xml");
     });
@@ -332,12 +338,21 @@ describe("GitlabClient", () => {
         new Response(JSON.stringify(commitData), { status: 201 }),
       );
 
-      const actions: CommitAction[] = [{ action: "create", file_path: "test.txt", content: "hello" }];
-      const result = await gitlabClient.createCommit(123, "main", actions, "feat: test");
+      const actions: CommitAction[] = [
+        { action: "create", file_path: "test.txt", content: "hello" },
+      ];
+      const result = await gitlabClient.createCommit(
+        123,
+        "main",
+        actions,
+        "feat: test",
+      );
 
       expect(result).toEqual(commitData);
       expect(mockFetch).toHaveBeenCalledWith(
-        new URL("https://gitlab.example.com/api/v4/projects/123/repository/commits"),
+        new URL(
+          "https://gitlab.example.com/api/v4/projects/123/repository/commits",
+        ),
         expect.objectContaining({
           method: "POST",
           body: JSON.stringify({
@@ -350,16 +365,22 @@ describe("GitlabClient", () => {
     });
 
     it("listRepositoryTrees should send GET request with query", async () => {
-      const treeData = [{ id: "1", name: "src", type: "tree", path: "src", mode: "040000" }];
+      const treeData = [
+        { id: "1", name: "src", type: "tree", path: "src", mode: "040000" },
+      ];
       mockFetch.mockResolvedValueOnce(
         new Response(JSON.stringify(treeData), { status: 200 }),
       );
 
-      const result = await gitlabClient.listRepositoryTrees("123", { recursive: true });
+      const result = await gitlabClient.listRepositoryTrees("123", {
+        recursive: true,
+      });
 
       expect(result).toEqual(treeData);
       expect(mockFetch).toHaveBeenCalledWith(
-        new URL("https://gitlab.example.com/api/v4/projects/123/repository/tree?recursive=true"),
+        new URL(
+          "https://gitlab.example.com/api/v4/projects/123/repository/tree?recursive=true",
+        ),
         expect.anything(),
       );
     });
@@ -370,11 +391,15 @@ describe("GitlabClient", () => {
         new Response(JSON.stringify(commitData), { status: 200 }),
       );
 
-      const result = await gitlabClient.listRepositoryCommits(123, { ref_name: "main" });
+      const result = await gitlabClient.listRepositoryCommits(123, {
+        ref_name: "main",
+      });
 
       expect(result).toEqual(commitData);
       expect(mockFetch).toHaveBeenCalledWith(
-        new URL("https://gitlab.example.com/api/v4/projects/123/repository/commits?ref_name=main"),
+        new URL(
+          "https://gitlab.example.com/api/v4/projects/123/repository/commits?ref_name=main",
+        ),
         expect.anything(),
       );
     });
