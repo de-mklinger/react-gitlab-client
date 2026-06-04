@@ -2,6 +2,9 @@ export { useGitLabAuth, type GitLabAuthService } from "./gitlab-auth-service";
 export { GitlabClient } from "./gitlab-client";
 export {
   type CommitAction,
+  type CommitDiff,
+  type GetCommitDiffArgs,
+  type GetCommitDiffResponse,
   type GitlabCommit,
   type ListRepositoryTreesArgs,
   type ListRepositoryTreesResponse,
