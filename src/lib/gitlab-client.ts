@@ -1,6 +1,9 @@
 import {
   type CommitAction,
+  type GetCommitDiffArgs,
+  type GetCommitDiffResponse,
   type GitlabCommit,
+  isGetCommitDiffResponse,
   isGitlabCommit,
   isListRepositoryCommitsResponse,
   isListRepositoryTreesResponse,
@@ -298,6 +301,21 @@ export class GitlabClient {
         method: "GET",
         query: GitlabClient.toQuery(args),
         typeGuard: isListRepositoryCommitsResponse,
+      },
+    );
+  }
+
+  public getCommitDiff(
+    projectIdOrPath: number | string,
+    sha: string,
+    opts?: GetCommitDiffArgs,
+  ): Promise<GetCommitDiffResponse> {
+    return this.fetchJson(
+      `/api/v4/projects/${encodeURIComponent(projectIdOrPath)}/repository/commits/${encodeURIComponent(sha)}/diff`,
+      {
+        method: "GET",
+        query: GitlabClient.toQuery(opts),
+        typeGuard: isGetCommitDiffResponse,
       },
     );
   }

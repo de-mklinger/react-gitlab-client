@@ -144,3 +144,55 @@ export function isListRepositoryTreesResponseItem(
     typeof x.mode === "string"
   );
 }
+
+export type GetCommitDiffArgs = {
+  /** If true, presents diffs in the unified diff format. Default is false. Introduced in GitLab 16.5. */
+  unidiff?: boolean;
+};
+
+export type GetCommitDiffResponse = Array<CommitDiff>;
+
+export function isGetCommitDiffResponse(
+  x: unknown,
+): x is GetCommitDiffResponse {
+  return Array.isArray(x) && x.every(isCommitDiff);
+}
+
+export type CommitDiff = {
+  /** Old file mode of the file. */
+  a_mode: string;
+  /** New file mode of the file. */
+  b_mode: string;
+  /** File diffs are excluded but can be fetched on request. */
+  collapsed: boolean;
+  /** File has been removed. */
+  deleted_file: boolean;
+  /** Diff representation of the changes made to the file. */
+  diff: string;
+  /** File has been added. */
+  new_file: boolean;
+  /** New path of the file. */
+  new_path: string;
+  /** Old path of the file. */
+  old_path: string;
+  /** File has been renamed. */
+  renamed_file: boolean;
+  /** File diffs are excluded and cannot be retrieved. */
+  too_large: boolean;
+};
+
+export function isCommitDiff(x: unknown): x is CommitDiff {
+  return (
+    isPlainOldObject(x) &&
+    typeof x.a_mode === "string" &&
+    typeof x.b_mode === "string" &&
+    typeof x.collapsed === "boolean" &&
+    typeof x.deleted_file === "boolean" &&
+    typeof x.diff === "string" &&
+    typeof x.new_file === "boolean" &&
+    typeof x.new_path === "string" &&
+    typeof x.old_path === "string" &&
+    typeof x.renamed_file === "boolean" &&
+    typeof x.too_large === "boolean"
+  );
+}
