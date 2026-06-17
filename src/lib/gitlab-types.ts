@@ -20,25 +20,77 @@ export function isGitlabCommit(x: unknown): x is GitlabCommit {
 }
 
 export type ListRepositoryCommitsArgs = {
-  /** The name of a repository branch, tag or revision range, or if not given the default branch. */
-  ref_name?: string;
-  /** Only commits after or on this date are returned in ISO 8601 format YYYY-MM-DDTHH:MM:SSZ. */
-  since?: string;
-  /** Only commits before or on this date are returned in ISO 8601 format YYYY-MM-DDTHH:MM:SSZ. */
-  until?: string;
-  /** The file path. */
-  path?: string;
-  /** Retrieve every commit from the repository. */
+  /**
+   * Retrieve every commit from the repository. If `true`, the `ref_name`
+   * parameter is ignored.
+   */
   all?: boolean;
-  /** If true, retrieve stats about each commit. */
-  with_stats?: boolean;
-  /** If true, parses and includes Git trailers for every commit. */
-  trailers?: boolean;
-  /** List commits in order. Possible values: default, topo. Defaults to default, the commits are shown in reverse chronological order. */
+
+  /**
+   * Search commits by commit author.
+   */
+  author?: string;
+
+  /**
+   * If `true`, follows only the first parent commit upon seeing a merge commit.
+   */
+  first_parent?: boolean;
+
+  /**
+   * If true, follows file renames when filtering commits by `path`, and returns
+   * commits for the file even if it was renamed. If `false`, returns only
+   * commits where the file existed at its current path. Used only when `path`
+   * specifies a single file. Defaults to `true`.
+   */
+  follow?: boolean;
+
+  /**
+   * List commits in order. Possible values: `default`, `topo`. Defaults to
+   * `default`, the commits are shown in reverse chronological order.
+   */
   order?: "default" | "topo";
-  /** Number of results to show per page. If not specified, defaults to 20. */
+
+  /**
+   * The file path.
+   */
+  path?: string;
+
+  /**
+   * The name of a repository branch, tag or revision range, or if not given the
+   * default branch.
+   */
+  ref_name?: string;
+
+  /**
+   * Only commits after or on this date are returned in ISO 8601 format
+   * YYYY-MM-DDTHH:MM:SSZ.
+   */
+  since?: string;
+
+  /**
+   * If true, parses and includes Git trailers for every commit.
+   */
+  trailers?: boolean;
+
+  /**
+   * Only commits before or on this date are returned in ISO 8601 format
+   * YYYY-MM-DDTHH:MM:SSZ.
+   */
+  until?: string;
+
+  /**
+   * If `true`, retrieve stats about each commit.
+   */
+  with_stats?: boolean;
+
+  /**
+   * Number of results to show per page. If not specified, defaults to 20.
+   */
   per_page?: number;
-  /** Page number. */
+
+  /**
+   * Page number.
+   */
   page?: number;
 };
 
