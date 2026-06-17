@@ -1,6 +1,6 @@
 {
   "name": "@de-mklinger/react-gitlab-client",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "A minimalist GitLab API and OIDC client for usage in React projects",
   "keywords": [
     "GitLab",
